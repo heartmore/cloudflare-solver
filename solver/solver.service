@@ -1,0 +1,20 @@
+[Unit]
+Description=Cloudflare Solver Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=solver
+Group=solver
+WorkingDirectory=/opt/solver
+ExecStart=/opt/solver/solver-linux
+Restart=always
+RestartSec=5
+
+Environment=PORT=8080
+Environment=FLARESOLVERR_URL=http://localhost:8191
+Environment=REDIS_URL=redis://localhost:6379/0
+Environment=WORKERS=4
+
+[Install]
+WantedBy=multi-user.target
