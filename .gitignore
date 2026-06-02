@@ -1,0 +1,37 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+
+# Go
+go.sum
+solver/vendor/
+solver/solver-linux
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+
+# Temp / Cache
+tmp/
+*.tmp
+*.log
+.codex_nuxt/
+.codex_tmp*.html
+.reasonix/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
