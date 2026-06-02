@@ -1,0 +1,112 @@
+openapi: 3.0.3
+info:
+  title: Cloudflare Solver API
+  description: |
+    Cloudflare 验证绕过 API。传 url + sitekey 自动返回 cf_clearance + turnstile_token。
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: local
+tags:
+  - name: Solve
+  - name: Dashboard
+paths:
+  /v1/health:
+    get:
+      tags: [Solve]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: {type: boolean}
+                  queue: {type: integer}
+  /v1/solve:
+    post:
+      tags: [Solve]
+      summary: Submit task
+      security: [{ApiKeyAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: {type: string, format: uri}
+                sitekey: {type: string, description: Turnstile sitekey for auto widget injection}
+                timeout: {type: integer, default: 60000}
+                proxy: {type: string, format: uri}
+      responses:
+        '202': {description: Accepted}
+        '400': {description: Bad request}
+        '429': {description: Rate limited}
+  /v1/result/{taskID}:
+    get:
+      tags: [Solve]
+      security: [{ApiKeyAuth: []}]
+      parameters:
+        - name: taskID
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultResponse'
+        '404': {description: Not found}
+  /v1/tasks:
+    get:
+      tags: [Dashboard]
+      security: [{ApiKeyAuth: []}]
+      responses:
+        '200': {description: Task list}
+  /v1/stats:
+    get:
+      tags: [Dashboard]
+      security: [{ApiKeyAuth: []}]
+      responses:
+        '200': {description: Stats}
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    ResultResponse:
+      type: object
+      properties:
+        task_id: {type: string}
+        status: {type: string, enum: [pending, running, completed, failed]}
+        solution: {$ref: '#/components/schemas/Solution'}
+        error: {type: string}
+        duration_ms: {type: integer}
+    Solution:
+      type: object
+      properties:
+        url: {type: string}
+        status: {type: integer}
+        cookies: {type: array, items: {$ref: '#/components/schemas/Cookie'}}
+        userAgent: {type: string}
+        turnstile_token: {type: string}
+        response: {type: string}
+    Cookie:
+      type: object
+      properties:
+        name: {type: string}
+        value: {type: string}
+        domain: {type: string}
+        path: {type: string}
+        expires: {type: number}
+        httpOnly: {type: boolean}
+        secure: {type: boolean}
+        sameSite: {type: string}
