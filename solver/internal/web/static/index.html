@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Solver Forge</title>
+<style>
+@font-face{font-family:"Geist";font-style:normal;font-weight:400 800;font-display:swap;
+  src:url("https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/GeistVariableVF.woff2") format("woff2");}
+@font-face{font-family:"Geist Mono";font-style:normal;font-weight:400 700;font-display:swap;
+  src:url("https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/GeistMonoVariableVF.woff2") format("woff2");}
+:root{
+  --paper:#f3efe4;--paper-dim:#e8e2d4;--ink:#0f0e0c;--ink-soft:#5c564e;
+  --ink-faint:#9a938a;--rule:rgba(15,14,12,0.10);--rule-strong:rgba(15,14,12,0.20);
+  --red:#b7392d;--green:#1f8b4c;--amber:#c2780a;
+  --mono:"Geist Mono","SFMono-Regular",Consolas,monospace;
+  --sans:"Geist","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --serif:"Times New Roman","Songti SC",Georgia,serif;
+  font-family:var(--sans);-webkit-font-smoothing:antialiased;color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  min-height:100vh;color:var(--ink);
+  background:radial-gradient(circle at 20% 14%,rgba(183,57,45,0.03),transparent 28%),
+    radial-gradient(circle at 74% 48%,rgba(15,14,12,0.03),transparent 34%),
+    linear-gradient(90deg,rgba(15,14,12,0.02) 1px,transparent 1px),
+    linear-gradient(rgba(15,14,12,0.02) 1px,transparent 1px),var(--paper);
+  background-size:auto,auto,72px 72px,72px 72px,auto;
+  overflow-x:hidden;overflow-y:auto;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.22;
+  background-image:radial-gradient(circle,rgba(15,14,12,0.14) 0 .55px,transparent .7px),
+    radial-gradient(circle,rgba(183,57,45,0.10) 0 .45px,transparent .65px);
+  background-size:5px 5px,11px 11px;mix-blend-mode:multiply;
+}
+button{cursor:pointer;font:inherit;color:inherit;border:0;background:none;}
+a{color:inherit;text-decoration:none;}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule-strong);padding:6px 10px;outline:none;font-family:var(--mono);font-size:12px;}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);}
+.manuscript{position:relative;z-index:1;max-width:1400px;min-height:100vh;margin:0 auto;display:flex;flex-direction:column;}
+.header{display:flex;align-items:center;gap:20px;padding:20px 48px 14px;border-bottom:2px solid var(--red);flex-shrink:0;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:14px;height:14px;background:var(--red);transform:rotate(45deg);}
+.brand-name{font-family:var(--serif);font-size:26px;font-weight:700;}
+.brand-meta{color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.28em;margin-left:6px;}
+.header-right{display:flex;align-items:center;gap:14px;margin-left:auto;}
+.status-pill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--ink-soft);}
+.status-pill .dot{width:8px;height:8px;border-radius:50%;}
+.content{flex:1;padding:28px 48px 40px;}
+.pane-title{display:flex;align-items:center;gap:14px;margin-bottom:20px;color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.32em;}
+.pane-title span{width:26px;height:1px;background:var(--ink-faint);}
+.pane-title i{width:6px;height:2px;background:var(--red);}
+.hero{font-size:clamp(36px,4vw,56px);font-weight:800;line-height:1.08;margin-bottom:16px;}
+.hero em{font-style:normal;position:relative;}
+.hero em::after{content:"";position:absolute;left:.04em;right:.04em;bottom:.06em;height:4px;background:var(--red);z-index:-1;}
+.hero-copy{color:var(--ink-soft);font-size:15px;line-height:1.8;max-width:560px;margin-bottom:28px;}
+.submit-card{background:var(--paper-dim);border:1px solid var(--rule-strong);padding:24px;margin-bottom:28px;display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:end;}
+.submit-card label{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.12em;margin-bottom:4px;text-transform:uppercase;}
+.submit-card input,.submit-card select{width:100%;min-width:120px;}
+.adv-row{grid-column:1/-1;display:none;gap:8px;}
+.adv-row.show{display:flex;}
+.adv-row input{width:100px;}
+.btn-primary{position:relative;display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 28px;color:#f8f4ea;background:var(--ink);font-size:16px;font-weight:600;border:none;}
+.btn-primary:hover{opacity:.9;}
+.btn-diamond{width:12px;height:12px;background:var(--red);transform:rotate(45deg);display:inline-block;}
+.btn-sm{padding:6px 14px;font-family:var(--mono);font-size:11px;border:1px solid var(--rule-strong);}
+.btn-sm:hover{background:var(--ink);color:var(--paper);}
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--rule);margin-bottom:28px;}
+.stat-box{background:var(--paper);padding:18px 16px;text-align:center;}
+.stat-box .num{font-size:36px;font-weight:800;line-height:1;}
+.stat-box .num.red{color:var(--red);}
+.stat-box .num.green{color:var(--green);}
+.stat-box .num.amber{color:var(--amber);}
+.stat-box .label{margin-top:4px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.12em;}
+.task-panel{border:1px solid var(--rule-strong);margin-bottom:28px;}
+.task-head{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--paper-dim);border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;color:var(--ink-faint);letter-spacing:.12em;}
+.task-head span{color:var(--ink);}
+.task-list{max-height:420px;overflow-y:auto;}
+.task-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--rule);font-size:12px;}
+.task-item:last-child{border-bottom:0;}
+.task-item .url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px;font-family:var(--mono);font-size:11px;color:var(--ink-soft);}
+.task-item .meta{flex-shrink:0;display:flex;gap:12px;align-items:center;}
+.badge{display:inline-block;padding:2px 8px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;}
+.badge.ok{background:#d9f0e1;color:var(--green);}
+.badge.fail{background:#f7ddd9;color:var(--red);}
+.badge.pending{background:#fdf0da;color:var(--amber);}
+.modal{display:none;position:fixed;inset:0;background:rgba(15,14,12,0.7);z-index:100;align-items:center;justify-content:center;}
+.modal.open{display:flex;}
+.modal-card{background:var(--paper);border:1px solid var(--rule-strong);width:90%;max-width:700px;max-height:80vh;overflow-y:auto;padding:24px;}
+.modal-card h3{font-size:14px;font-family:var(--mono);margin-bottom:16px;color:var(--ink-soft);}
+.modal-card pre{background:var(--paper-dim);padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;}
+.modal-close{float:right;font-size:20px;cursor:pointer;color:var(--ink-faint);}
+.tab-bar{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--rule);}
+.tab-bar button{padding:6px 16px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);border-bottom:2px solid transparent;}
+.tab-bar button.active{color:var(--ink);border-bottom-color:var(--ink);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.footer{display:flex;align-items:center;gap:24px;padding:14px 48px;border-top:1px solid var(--rule-strong);font-family:var(--mono);font-size:11px;color:var(--ink-soft);flex-shrink:0;}
+.footer .spacer{flex:1;}
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);z-index:99;padding:12px 28px;background:var(--ink);color:#f8f4ea;font-family:var(--mono);font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;}
+.toast.show{opacity:1;}
+@media(max-width:900px){
+  .header{padding:14px 20px 10px;flex-wrap:wrap;}
+  .content{padding:16px 20px 24px;}
+  .footer{padding:10px 20px;}
+  .submit-card{grid-template-columns:1fr 1fr;}
+  .stats-bar{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="manuscript">
+<header class="header">
+  <div class="brand"><span class="brand-mark"></span><span class="brand-name">Solver Forge</span><span class="brand-meta">VOL. I</span></div>
+  <div class="header-right">
+    <span class="status-pill"><span class="dot" id="srvDot" style="background:var(--green)"></span><span id="srvStatus">Ready</span></span>
+    <a href="/docs" style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);">API Docs</a>
+  </div>
+</header>
+<div class="content">
+  <p class="pane-title"><span></span>Cloudflare Solver<i></i></p>
+  <div class="hero"><div>Self-hosted <em>Cloudflare</em></div><div>Challenge Solver</div></div>
+  <p class="hero-copy">Submit URL, get cf_clearance + turnstile_token. Supports widget injection and pre-actions.</p>
+  <div class="submit-card">
+    <div><label>URL</label><input id="urlInput" type="url" placeholder="https://example.com" autofocus/></div>
+    <div><label>Mode</label><select id="modeSelect" onchange="toggleAdvanced()"><option value="auto">Auto</option><option value="turnstile">Turnstile</option><option value="inject">Inject Widget</option></select></div>
+    <div><label>Timeout(ms)</label><input id="timeoutInput" type="number" value="60000" min="5000" max="120000"/></div>
+    <button class="btn-primary" onclick="submitTask()"><span class="btn-diamond"></span>Submit</button>
+    <div class="adv-row" id="advOpts">
+      <div><label>Tabs</label><input id="tabsInput" type="number" value="2" min="1" max="10"/></div>
+      <div><label>Wait(s)</label><input id="waitInput" type="number" value="8" min="1" max="30"/></div>
+      <div><label>Proxy</label><input id="proxyInput" placeholder="http://user:pass@ip:8080"/></div>
+      <div><label>SiteKey</label><input id="sitekeyInput" placeholder="0x4AAAAAA..." value="0x4AAAAAAAhr9JGVDZbrZOo0"/></div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-box"><div class="num" id="statTotal">0</div><div class="label">Total</div></div>
+    <div class="stat-box"><div class="num green" id="statOk">0</div><div class="label">Success</div></div>
+    <div class="stat-box"><div class="num red" id="statFail">0</div><div class="label">Failed</div></div>
+    <div class="stat-box"><div class="num amber" id="statPending">0</div><div class="label">Pending</div></div>
+    <div class="stat-box"><div class="num" id="statQueue">0</div><div class="label">Queue</div></div>
+  </div>
+  <div class="task-panel">
+    <div class="task-head"><span>Tasks</span><span id="taskCount">0</span></div>
+    <div class="task-list" id="taskList"><div style="color:var(--ink-faint);text-align:center;padding:48px;font-family:var(--mono);font-size:12px">No tasks</div></div>
+  </div>
+</div>
+<div class="footer">
+  <span class="status-pill"><span class="dot" id="ftrDot" style="background:var(--green)"></span><span id="ftrStatus">Ready</span></span>
+  <span>API v1</span>
+  <span class="spacer"></span>
+  <span id="ftrTime">--</span>
+</div>
+</div>
+<div class="modal" id="detailModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h3 id="modalTitle">Detail</h3>
+    <div class="tab-bar">
+      <button class="active" onclick="switchTab('cookies')">Cookies</button>
+      <button onclick="switchTab('token')">Token</button>
+      <button onclick="switchTab('raw')">JSON</button>
+    </div>
+    <div class="tab-panel active" id="panel-cookies"><pre id="detailCookies"></pre></div>
+    <div class="tab-panel" id="panel-token"><pre id="detailToken"></pre></div>
+    <div class="tab-panel" id="panel-raw"><pre id="detailRaw"></pre></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const API='';
+function $(id){return document.getElementById(id);}
+function toggleAdvanced(){
+  const m=$('modeSelect').value;
+  $('advOpts').classList.toggle('show',m==='turnstile'||m==='inject');
+  $('sitekeyInput').parentElement.style.display=m==='inject'?'':'none';
+}
+async function submitTask(){
+  const url=$('urlInput').value.trim();
+  if(!url){toast('URL required');return;}
+  const mode=$('modeSelect').value;
+  const payload={url,mode,timeout:parseInt($('timeoutInput').value)||60000};
+  if(mode==='turnstile'){payload.tabs_till_verify=parseInt($('tabsInput').value)||2;payload.wait_after=parseInt($('waitInput').value)||5;}
+  if(mode==='inject'){
+    const sk=$('sitekeyInput').value.trim()||'0x4AAAAAAAhr9JGVDZbrZOo0';
+    payload.actions=[{type:'wait',wait_ms:1500},{type:'js',value:"var d=document.createElement('div');d.className='cf-turnstile';d.setAttribute('data-sitekey','"+sk+"');d.style.cssText='position:fixed;top:10px;left:10px;z-index:99999;background:white;padding:20px';document.body.appendChild(d);var i=document.createElement('input');i.type='hidden';i.name='cf-turnstile-response';document.body.appendChild(i);var s=document.createElement('script');s.src='https://challenges.cloudflare.com/turnstile/v0/api.js';s.onload=function(){window.turnstile.render(d,{sitekey:'"+sk+"',callback:function(t){i.value=t;}});};document.head.appendChild(s);"},{type:'wait',wait_ms:10000}];
+  }
+  const proxy=$('proxyInput').value.trim();if(proxy)payload.proxy=proxy;
+  try{
+    const r=await fetch(API+'/v1/solve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(r.ok&&d.task_id){toast('Task: '+d.task_id.slice(0,8));$('urlInput').value='';refreshAll();}
+    else{toast(d.error||'Failed');}
+  }catch(e){toast('Network error');}
+}
+async function refreshAll(){
+  try{
+    const[hr,tr,sr]=await Promise.all([fetch(API+'/v1/health').then(r=>r.json()),fetch(API+'/v1/tasks').then(r=>r.json()),fetch(API+'/v1/stats').then(r=>r.json())]);
+    $('statTotal').textContent=sr.total||0;$('statOk').textContent=sr.completed||0;$('statFail').textContent=sr.failed||0;$('statPending').textContent=sr.pending||0;$('statQueue').textContent=hr.queue||0;
+    const tasks=tr.tasks||[];$('taskCount').textContent=tasks.length;
+    const el=$('taskList');
+    if(!tasks.length){el.innerHTML='<div style="color:var(--ink-faint);text-align:center;padding:48px;font-family:var(--mono);font-size:12px">No tasks</div>';return;}
+    el.innerHTML=tasks.map(t=>{
+      const url=(t.solution&&t.solution.url)||t.task_id.slice(0,8);
+      const disp=url.length>50?url.slice(0,50)+'...':url;
+      const badge=t.status==='completed'?'ok':t.status==='failed'?'fail':'pending';
+      const dur=t.duration_ms?(t.duration_ms/1000).toFixed(1)+'s':'';
+      return '<div class="task-item"><span class="url" title="'+url+'">'+disp+'</span><span class="meta"><span class="badge '+badge+'">'+t.status+'</span>'+dur+'<button class="btn-sm" onclick="viewDetail(\''+t.task_id+'\')">Detail</button></span></div>';
+    }).join('');
+    $('ftrTime').textContent=new Date().toLocaleTimeString();
+  }catch(e){}
+}
+async function viewDetail(tid){
+  try{
+    const r=await fetch(API+'/v1/result/'+tid);const d=await r.json();const s=d.solution||{};
+    $('modalTitle').textContent='Task '+tid.slice(0,8);
+    $('detailCookies').textContent=JSON.stringify(s.cookies||[],null,2);
+    $('detailToken').textContent=s.turnstile_token||'(none)';
+    $('detailRaw').textContent=JSON.stringify(d,null,2);
+    $('detailModal').classList.add('open');
+    document.querySelectorAll('.tab-bar button').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===0));
+  }catch(e){toast('Load failed');}
+}
+function closeModal(){$('detailModal').classList.remove('open');}
+function switchTab(name){
+  document.querySelectorAll('.tab-bar button').forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase().includes(name)));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+}
+$('detailModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+toggleAdvanced();refreshAll();setInterval(refreshAll,3000);
+</script>
+</body>
+</html>
